@@ -166,7 +166,7 @@ spec:
 #kubectl -n hello apply -f webhook.yaml
 
 
-7)kind type Helloworld creation with api version code-desk-ubuntu2204-4-lts.test/v1 #hello.yaml, name and who must be small case letter, here who is what you want to display in busybox echo hello pintu (who), name amit is kind resource name as pod
+7)kind type Helloworld creation with api version code-desk-ubuntu2204-4-lts.test/v1 #hello.yaml, name  must be small case letter, here who is what you want to display in busybox echo hello pintu (who), name amit is kind resource name as pod
 
 apiVersion: code-desk-ubuntu2204-4-lts.test/v1
 kind: HelloWorld
