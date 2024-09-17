@@ -1,0 +1,194 @@
+1) Meta controller creation
+kubectl apply -k https://github.com/metacontroller/metacontroller/manifests/production
+
+
+
+
+2)name space for crd
+kubectl create namespace hello
+
+
+
+
+3)custom resource defination - Here we specified group name code-desk-ubuntu2204-4-lts.test for resource api version, apiextensions.k8s.io/v1 required when you define custom resource defination. Our custom resource is kind HelloWorld
+
+#crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: helloworlds.code-desk-ubuntu2204-4-lts.test
+spec:
+  group: code-desk-ubuntu2204-4-lts.test
+  names:
+    kind: HelloWorld
+    plural: helloworlds
+    singular: helloworld
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              who:
+                type: string
+    subresources:
+     status: {}
+     
+#kubectl apply -f crd.yaml
+     
+
+4)Define custom controller = hello-controller with api version code-desk-ubuntu2204-4-lts.test/v1. Here we created child resource pods where sync.py business logic will run. we are using webhook to forward traffic to pod having sync.py. This below creates our custom controller to respond our custom resource kind helloworld (here hello-controller is service name and hello is name space with calling sync url: http://hello-controller.hello/sync )
+
+apiVersion: metacontroller.k8s.io/v1alpha1
+kind: CompositeController
+metadata:
+  name: hello-controller
+spec:
+  generateSelector: true
+  parentResource:
+    apiVersion: code-desk-ubuntu2204-4-lts.test/v1
+    resource: helloworlds
+  childResources:
+  - apiVersion: v1
+    resource: pods
+    updateStrategy:
+      method: Recreate
+  hooks:
+    sync:
+      webhook:
+        url: http://hello-controller.hello/sync
+
+     
+#kubectl apply -f controller.yaml
+
+
+
+5)sync.py as configmap to mount inside webhook pod to run it. Sync is main business logic where you serve http request for custom resource defination creation like HelloWorld kind. Here in these code we are running as HTTP server which take desire state as pod busybox creation with command "echo hello with kind helloworld input (who)".Here pod name is name taken from kind HelloWorld.
+
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+
+class Controller(BaseHTTPRequestHandler):
+  def sync(self, parent, children):
+    # Compute status based on observed state.
+    desired_status = {
+      "pods": len(children["Pod.v1"])
+    }
+
+    # Generate the desired child object(s).
+    who = parent.get("spec", {}).get("who", "World")
+    desired_pods = [
+      {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {
+          "name": parent["metadata"]["name"]
+        },
+        "spec": {
+          "restartPolicy": "OnFailure",
+          "containers": [
+            {
+              "name": "hello",
+              "image": "busybox",
+              "command": ["echo", "Hello, %s!" % who]
+            }
+          ]
+        }
+      }
+    ]
+
+    return {"status": desired_status, "children": desired_pods}
+
+  def do_POST(self):
+    # Serve the sync() function as a JSON webhook.
+    observed = json.loads(self.rfile.read(int(self.headers.get("content-length"))))
+    desired = self.sync(observed["parent"], observed["children"])
+
+    self.send_response(200)
+    self.send_header("Content-type", "application/json")
+    self.end_headers()
+    self.wfile.write(json.dumps(desired).encode())
+
+HTTPServer(("", 80), Controller).serve_forever()
+
+
+#configmap creation from sync.py in hello name space
+#kubectl -n hello create configmap hello-controller --from-file=sync.py
+
+
+6)webhook deployment and service to run pod with sync.py which is busybox echo hello with kind HelloWorld input (hello-controller is pod name and service name in name space hello)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-controller
+  template:
+    metadata:
+      labels:
+        app: hello-controller
+    spec:
+      containers:
+      - name: controller
+        image: python:3
+        command: ["python3", "/hooks/sync.py"]
+        volumeMounts:
+        - name: hooks
+          mountPath: /hooks
+      volumes:
+      - name: hooks
+        configMap:
+          name: hello-controller
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-controller
+spec:
+  selector:
+    app: hello-controller
+  ports:
+  - port: 80
+
+#webhook creation  
+#kubectl -n hello apply -f webhook.yaml
+
+
+7)kind type Helloworld creation with api version code-desk-ubuntu2204-4-lts.test/v1 #hello.yaml, name and who must be small case letter, here who is what you want to display in busybox echo hello pintu (who), name amit is kind resource name as pod
+
+apiVersion: code-desk-ubuntu2204-4-lts.test/v1
+kind: HelloWorld
+metadata:
+  name: amit
+spec:
+  who: pintu
+
+#hello yaml creation
+#kubectl -n hello apply -f hello.yaml
+
+8)get pods 
+
+
+#kubectl -n hello get pods
+NAME                                READY   STATUS      RESTARTS   AGE
+amit                                0/1     Completed   0          28s
+hello-controller-5454565fc8-sqxrx   1/1     Running     0          9m52s
+
+
+9)check pod amit logs
+kubectl -n hello logs amit
+Hello, pintu!
+
+
+
+
