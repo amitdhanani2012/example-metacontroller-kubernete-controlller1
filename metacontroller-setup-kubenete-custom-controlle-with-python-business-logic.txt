@@ -1,6 +1,6 @@
 #ref https://metacontroller.github.io/metacontroller/guide/create.html
 
-1) Meta controller creation
+1) Meta controller creation using kustomization
 kubectl apply -k https://github.com/metacontroller/metacontroller/manifests/production
 
 
