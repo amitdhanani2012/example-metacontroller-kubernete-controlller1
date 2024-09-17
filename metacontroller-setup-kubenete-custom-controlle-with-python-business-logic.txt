@@ -186,6 +186,7 @@ NAME                                READY   STATUS      RESTARTS   AGE
 amit                                0/1     Completed   0          28s
 hello-controller-5454565fc8-sqxrx   1/1     Running     0          9m52s
 
+Here hello-controller-5454565fc8-sqxrx is our webhook pod and amit is our kind:HelloWorld pod having busybox image and echo "Hello, pintu!" command (echo "Hello, (who)!")
 
 9)check pod amit logs
 kubectl -n hello logs amit
