@@ -124,7 +124,7 @@ HTTPServer(("", 80), Controller).serve_forever()
 #kubectl -n hello create configmap hello-controller --from-file=sync.py
 
 
-6)webhook deployment and service to run pod with sync.py which is busybox echo hello with kind HelloWorld input (hello-controller is pod name and service name in name space hello)
+6)webhook deployment and service to run pod with sync.py with output which is busybox echo hello with kind HelloWorld input (hello-controller is pod name and service name in name space hello)
 
 apiVersion: apps/v1
 kind: Deployment
