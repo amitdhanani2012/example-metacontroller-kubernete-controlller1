@@ -45,7 +45,7 @@ spec:
 #kubectl apply -f crd.yaml
      
 
-4)Define custom controller = hello-controller with api version code-desk-ubuntu2204-4-lts.test/v1. Here we created child resource pods busybox echo hello (who) run. we are using webhook to forward traffic to pod having sync.py(hello-controller deployment/service). This below creates our custom controller to respond our custom resource kind helloworld (here hello-controller is service name and hello is name space with calling sync url: http://hello-controller.hello/sync ) - Here parentResource is kind helloworld (take pod name  from it in sync.py and childResources is pods(busybox in sync.py)
+4)Define custom controller = hello-controller with api version code-desk-ubuntu2204-4-lts.test/v1. Here we created child resource as pods (busybox echo hello (who) run). we are using webhook to forward traffic to pod having sync.py(hello-controller deployment/service). This below creates our custom controller to respond our custom resource kind helloworld (here hello-controller is service name and hello is name space with calling sync url: http://hello-controller.hello/sync ) - Here parentResource is kind helloworld (take pod name  from it in sync.py and childResources is pods(busybox in sync.py)
 
 apiVersion: metacontroller.k8s.io/v1alpha1
 kind: CompositeController
