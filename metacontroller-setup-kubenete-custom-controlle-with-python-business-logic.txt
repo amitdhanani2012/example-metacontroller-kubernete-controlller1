@@ -195,5 +195,5 @@ Hello, pintu!
 
 Flow will be
 
-Kubernetes API -> Custom Metacontroller hello-controller -> Webhook service http://hello-controller.hello/sync -> hello-controller pod -> Custom Metacontroller-> Kubernetes API.
+Kubernetes API -> Custom Metacontroller hello-controller -> Webhook service http://hello-controller.hello/sync -> hello-controller service -> hello-controller pod -> Custom Metacontroller hello-controller-> Kubernetes API.
 
